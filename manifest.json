@@ -1,7 +1,7 @@
 {
   "name": "KDS Sistema de Cocina",
   "short_name": "KDS-Resto",
-  "description": "Pantalla de cocina controlada por teclado",
+  "description": "Pantalla de cocina controlada por terminal inteligente QR",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#121212",
@@ -9,7 +9,7 @@
   "orientation": "landscape",
   "icons": [
     {
-      "src": "https://via.placeholder.com/192",
+      "src": "imagenes/set.jpg",
       "sizes": "192x192",
       "type": "image/png"
     }

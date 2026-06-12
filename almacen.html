@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Almacén y Control - #MesasInteligentes</title>
+  <style>
+    body { background-color: #121216; color: #e0e0e0; font-family: monospace; margin: 0; padding: 15px; }
+    header { border-bottom: 3px solid #8bc34a; padding-bottom: 10px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
+    h1 { color: #8bc34a; margin: 0; }
+    .btn-refresh { background: #333; color: #8bc34a; border: 1px solid #8bc34a; padding: 8px 15px; cursor: pointer; font-weight: bold; font-family: monospace; }
+    
+    table { width: 100%; border-collapse: collapse; margin-top: 15px; background-color: #1e1e24; }
+    th, td { border: 1px solid #444; padding: 12px; text-align: left; }
+    th { background-color: #2e7d32; color: white; }
+    tr:nth-child(even) { background-color: #17171c; }
+    
+    .badge { padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 0.85rem; }
+    .badge-stock { background-color: #1b5e20; color: #fff; }
+    .badge-merma { background-color: #b71c1c; color: #fff; }
+    .badge-cortesia { background-color: #0288d1; color: #fff; }
+    
+    .panel-resumen { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px; }
+    .card-resumen { background: #1e1e24; padding: 15px; border-radius: 6px; border-left: 5px solid #8bc34a; }
+    .card-resumen h3 { margin: 0 0 10px 0; font-size: 0.9rem; color: #aaa; }
+    .card-resumen p { margin: 0; font-size: 1.6rem; font-weight: bold; color: #fff; }
+    
+    input[type="number"] { background: #2a2a35; color: white; border: 1px solid #555; padding: 5px; width: 60px; font-family: monospace; text-align: center; }
+    .btn-action { background: #ff5722; color: white; border: none; padding: 5px 10px; cursor: pointer; font-family: monospace; font-weight: bold; border-radius: 3px; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>📦 PANEL DE ALMACÉN Y AUDITORÍA</h1>
+    <button class="btn-refresh" onclick="cargarInventario()">🔄 Sincronizar Datos</button>
+  </header>
+
+  <!-- Tarjetas de Totales Operativos -->
+  <div class="panel-resumen">
+    <div class="card-resumen" style="border-left-color: #8bc34a;">
+      <h3>VENTAS TOTALES ($)</h3>
+      <p id="total-ventas">$0.00</p>
+    </div>
+    <div class="card-resumen" style="border-left-color: #f44336;">
+      <h3>VALOR MERMAS ($)</h3>
+      <p id="total-mermas">$0.00</p>
+    </div>
+    <div class="card-resumen" style="border-left-color: #2196f3;">
+      <h3>CORTESÍAS OTORGADAS</h3>
+      <p id="total-cortesias">0 pzas</p>
+    </div>
+    <div class="card-resumen" style="border-left-color: #ff9800;">
+      <h3>DESCUENTOS APLICADOS ($)</h3>
+      <p id="total-descuentos">$0.00</p>
+    </div>
+  </div>
+
+  <h2>Comparativa de Existencias y Flujo de Productos</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Platillo / Bebida</th>
+        <th>Área</th>
+        <th>Stock Inicial</th>
+        <th>Vendidos</th>
+        <th>Mermas</th>
+        <th>Cortesías</th>
+        <th>Stock Actual</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody id="tabla-almacen-body">
+      <!-- Se inyecta dinámicamente -->
+    </tbody>
+  </table>
+
+  <script>
+    // Inicialización del inventario en memoria compartida (localStorage)
+    let inventarioBase = [
+      { id: 101, name: "Salmón Infusionado", area: "Cocina", inicial: 20, vendidos: 4, mermas: 1, cortesias: 0 },
+      { id: 102, name: "Rib Eye Americano", area: "Cocina", inicial: 15, vendidos: 6, mermas: 0, cortesias: 1 },
+      { id: 103, name: "Piñada Fría", area: "Barra", inicial: 50, vendidos: 12, mermas: 2, cortesias: 2 },
+      { id: 104, name: "Enchiladas de la Casa", area: "Cocina", inicial: 40, vendidos: 15, mermas: 0, cortesias: 0 },
+      { id: 105, name: "Gin Tonic", area: "Barra", inicial: 30, vendidos: 8, mermas: 1, cortesias: 1 }
+    ];
+
+// Precios de referencia para calcular costos financieros de mermas y ventas
+    const preciosReferencia = { 101: 300, 102: 400, 103: 35, 104: 85, 105: 95 };
+
+    function cargarInventario() {
+      // Si ya hay datos en la red local del navegador, los jalamos; si no, montamos la base
+      if (!localStorage.getItem('inventario_pwa')) {
+        localStorage.setItem('inventario_pwa', JSON.stringify(inventarioBase));
+        localStorage.setItem('financieros_pwa', JSON.stringify({ ventas: 1240, mermas: 335, descuentos: 50 }));
+      }
+
+      const datos = JSON.parse(localStorage.getItem('inventario_pwa'));
+      const finanzas = JSON.parse(localStorage.getItem('financieros_pwa'));
+      
+      // Renderizar los números maestros
+      document.getElementById('total-ventas').innerText = $${finanzas.ventas.toFixed(2)};
+      document.getElementById('total-mermas').innerText = $${finanzas.mermas.toFixed(2)};
+      document.getElementById('total-descuentos').innerText = $${finanzas.descuentos.toFixed(2)};
+      
+      let totalCortesias = 0;
+      const tbody = document.getElementById('tabla-almacen-body');
+      tbody.innerHTML = "";
+
+      datos.forEach((item, index) => {
+        totalCortesias += item.cortesias;
+        const actual = item.inicial - item.vendidos - item.mermas - item.cortesias;
+        
+        const fila = document.createElement('tr');
+        fila.innerHTML = 
+          <td><strong>${item.name}</strong></td>
+          <td><span class="badge" style="background-color: ${item.area==='Cocina'?'#d32f2f':'#1976d2'}">${item.area}</span></td>
+          <td>${item.inicial}</td>
+          <td style="color: #8bc34a; font-weight:bold;">${item.vendidos}</td>
+          <td style="color: #e53935;">${item.mermas}</td>
+          <td style="color: #2196f3;">${item.cortesias}</td>
+          <td><span class="badge badge-stock">${actual} pzas</span></td>
+          <td>
+            <input type="number" id="input-merma-${index}" min="1" placeholder="Cant" style="width:40px;">
+            <button class="btn-action" onclick="registrarMerma(${index})">⚠️ +Merma</button>
+          </td>
+        ;
+        tbody.appendChild(fila);
+      });
+
+      document.getElementById('total-cortesias').innerText = ${totalCortesias} pzas;
+    }
+
+    function registrarMerma(index) {
+      const input = document.getElementById(input-merma-${index});
+      const cantidad = parseInt(input.value);
+      if (isNaN(cantidad) || cantidad <= 0) { alert("Mete una cantidad válida, carnal."); return; }
+
+      let datos = JSON.parse(localStorage.getItem('inventario_pwa'));
+      let finanzas = JSON.parse(localStorage.getItem('financieros_pwa'));
+
+      // Modificar datos de stock
+      datos[index].mermas += cantidad;
+      
+      // Calcular impacto financiero basado en el costo de referencia
+      const idProd = datos[index].id;
+      const valorPerdido = preciosReferencia[idProd] * cantidad;
+      finanzas.mermas += valorPerdido;
+
+      // Guardar de vuelta
+      localStorage.setItem('inventario_pwa', JSON.stringify(datos));
+      localStorage.setItem('financieros_pwa', JSON.stringify(finanzas));
+
+      input.value = "";
+      cargarInventario();
+    }
+
+    // Ejecutar al abrir pantalla
+    window.onload = cargarInventario;
+  </script>
+</body>
+</html>

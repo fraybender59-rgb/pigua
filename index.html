@@ -3,44 +3,119 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Mesas Inteligentes - Áreas de Producción</title>
-  <link rel="stylesheet" href="styles.css">
+  <title>Menú Digital - #MesasInteligentes</title>
+  <style>
+    body { background-color: #0b0b0d; color: #f5f5f7; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; }
+
+    /* Encabezado elegante */
+    header { background: linear-gradient(180deg, #1a1a24 0%, #0b0b0d 100%); text-align: center; padding: 30px 15px; border-bottom: 1px solid #222; }
+    header h1 { margin: 0; font-size: 1.8rem; color: #ffb74d; letter-spacing: 2px; }
+    header p { margin: 5px 0 0 0; color: #888; font-size: 0.9rem; }
+
+    /* Filtros por categoría */
+    .categorias { display: flex; justify-content: center; gap: 10px; padding: 15px; overflow-x: auto; white-space: nowrap; background-color: #121216; position: sticky; top: 0; z-index: 100; }
+    .btn-cat { background: #222; color: #ccc; border: 1px solid #444; padding: 8px 16px; border-radius: 20px; font-weight: bold; cursor: pointer; }
+    .btn-cat.active { background: #ffb74d; color: #111; border-color: #ffb74d; }
+
+    /* Contenedor de Platillos */
+    .menu-container { padding: 15px; display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 15px; max-width: 800px; margin: 0 auto; }
+
+    /* Tarjeta de Producto - CORREGIDO (Líneas truncadas en terminal) */
+    .card-platillo { background-color: #16161a; border-radius: 12px; overflow: hidden; border: 1px solid #2a2a35; display: flex; flex-direction: column; justify-content: space-between; }
+    .card-platillo:active { transform: scale(0.98); }
+
+    .img-contenedor { width: 100%; height: 130px; background-color: #222; overflow: hidden; position: relative; }
+    .img-contenedor img { width: 100%; height: 100%; object-fit: cover; }
+
+    .info-platillo { padding: 12px; display: flex; flex-direction: column; flex-grow: 1; justify-content: space-between; }
+    .nombre-platillo { font-size: 1rem; font-weight: 600; margin: 0 0 5px 0; color: #fff; }
+    .precio-platillo { font-size: 1.1rem; font-weight: bold; color: #8bc34a; margin: 0; }
+
+    /* Alerta de sin existencias - CORREGIDO */
+    .agotado { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); color: #e53935; display: flex; align-items: center; justify-content: center; font-weight: bold; }
+  </style>
 </head>
 <body>
-  <header>
-    <h1 style="color: #ff5722; font-family: monospace; margin: 0;">🍽️ Sistema de Comandeo por Áreas</h1>
-  </header>
-  
-  <div class="app-layout">
-    
-    <main class="catalog-section">
-      <div id="menu-items-grid"></div>
-    </main>
-    
-    <aside class="order-section">
-      <h2>Comanda Activa</h2>
-      <div class="table-selector">
-        <label>Mesa # </label>
-        <input type="number" id="table-number" value="1" min="1" max="30">
-      </div>
-      
-      <div id="order-items-list">
-        <p class="empty-msg">No hay productos en la comanda.</p>
-      </div>
-      
-      <div class="order-total">
-        <span>TOTAL:</span>
-        <span id="order-total-amount">$0.00</span>
-      </div>
-      
-      <button id="btn-send-production" class="btn-warning">🔥 Mandar a Producción (Cocina/Barra)</button>
-      <button id="btn-generate-check" class="btn-success">🧾 Generar Cuenta Cliente</button>
-      
-      <div id="ticket-print-area" style="display: none;"></div>
-    </aside>
 
+  <header>
+    <h1>La Pigua - Taberna Gourmet</h1>
+    <p>Escanea, Elige y Disfruta tu Estancia</p>
+  </header>
+
+  <div class="categorias">
+    <button class="btn-cat active" onclick="filtrar('todos')">Todos</button>
+    <button class="btn-cat" onclick="filtrar('Cocina')">Platillos</button>
+    <button class="btn-cat" onclick="filtrar('Barra')">Bebidas</button>
   </div>
 
-  <script src="app.js"></script>
+  <div class="menu-container" id="menu-cliente-grid">
+    </div>
+
+  <script>
+    // CORREGIDO: Sintaxis limpia de objetos, comas y remoción de signos '$'
+    const productosMenu = [
+      { id: 101, name: "Hamburguesa", area: "Cocina", precio: 70, img: "imagenes/hambur.jpeg" },
+      { id: 102, name: "Hot Dogs", area: "Cocina", precio: 25, img: "imagenes/hot.jpeg" },
+      { id: 103, name: "Orden de Hot Dogs", area: "Cocina", precio: 65, img: "imagenes/Hotdogs-1.jpg" },
+      { id: 104, name: "Sincronizadas Mexa", area: "Cocina", precio: 85, img: "imagenes/sincromexa.jpeg" },
+      { id: 105, name: "Sincronizadas Pizza", area: "Cocina", precio: 95, img: "imagenes/sincornizadadepizza.webp" },
+      { id: 106, name: "Club Sandwich", area: "Cocina", precio: 95, img: "imagenes/club.jpg" },
+      { id: 107, name: "Enchiladas", area: "Cocina", precio: 65, img: "imagenes/enchiladas.jpeg" },
+      { id: 108, name: "Chilaquiles", area: "Cocina", precio: 70, img: "imagenes/chilaquiles.jpg" },
+      { id: 109, name: "Variantes de Enchiladas", area: "Cocina", precio: 90, img: "imagenes/mexaincha.jpeg" },
+      { id: 110, name: "chimichangas", area: "Cocina", precio: 30, img: "imagenes/pool.jpeg" },
+      { id: 111, name: "chimichangas2", area: "Cocina", precio: 40, img: "imagenes/dead.webp" },
+      { id: 112, name: "hotcakes", area: "Cocina", precio: 75, img: "imagenes/hotcakes.jpg" }
+    ];
+
+    function cargarMenu(categoria = 'todos') {
+      const grid = document.getElementById('menu-cliente-grid');
+      if (!grid) return;
+      grid.innerHTML = "";
+
+      // Conectamos con el localStorage del Almacén para validar existencias reales
+      const inventarioReal = JSON.parse(localStorage.getItem('inventario_pwa')) || [];
+
+      productosMenu.forEach(prod => {
+        if (categoria !== 'todos' && prod.area !== categoria) return;
+
+        // Buscar si este producto tiene stock en el almacén
+        const itemInv = inventarioReal.find(item => item.id === prod.id);
+        let estaAgotado = false;
+
+        if (itemInv) {
+          const disponible = itemInv.inicial - itemInv.vendidos - itemInv.mermas - itemInv.cortesias;
+          if (disponible <= 0) estaAgotado = true;
+        }
+
+        const tarjeta = document.createElement('div');
+        tarjeta.className = 'card-platillo';
+
+        // CORREGIDO: Se añadieron las comillas invertidas faltantes para el template string
+        tarjeta.innerHTML = `
+          <div class="img-contenedor">
+            <img src="${prod.img}" alt="${prod.name}" onerror="this.src='imagenes/set.jpg'">
+            ${estaAgotado ? '<div class="agotado">⚠️ AGOTADO</div>' : ''}
+          </div>
+          <div class="info-platillo">
+            <h3 class="nombre-platillo">${prod.name}</h3>
+            <p class="precio-platillo">$${prod.precio.toFixed(2)}</p>
+          </div>
+        `;
+        grid.appendChild(tarjeta);
+      });
+    }
+
+    function filtrar(cat) {
+      document.querySelectorAll('.btn-cat').forEach(btn => btn.classList.remove('active'));
+      if (event && event.target) {
+        event.target.classList.add('active');
+      }
+      cargarMenu(cat);
+    }
+
+    // Carga automática al iniciar la pantalla
+    window.onload = () => cargarMenu('todos');
+  </script>
 </body>
 </html>
